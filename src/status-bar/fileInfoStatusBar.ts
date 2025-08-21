@@ -65,7 +65,7 @@ export class FileInfoStatusBar implements vscode.Disposable {
 
         if (choice === "📋 Copy test text") {
             // Provide exactly 100 characters for measurement
-            const testText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".repeat(3) + "ABCDEFGHIJKLMNOPQRSTUV"; // 100 chars
+            const testText = "0123456789".repeat(10);
             await vscode.env.clipboard.writeText(testText);
             vscode.window.showInformationMessage("100 characters copied to clipboard. Paste into your editor and measure with a ruler.");
             return;
