@@ -3,7 +3,11 @@
 
 # HowLong?
 
+![](./images/preview.png)
+
 _Ever wondered how long your code really is? Not just in lines, but in centimeters, bananas, or Eiffel Towers?_
+
+---
 
 ## ⚠️ Calibration Required!
 
@@ -12,10 +16,6 @@ _Ever wondered how long your code really is? Not just in lines, but in centimete
 Use the command `HowLong: Calibrate File Length Measurement (howlong.calibrate)` to set your screen's character size. This ensures the extension gives you correct physical length estimates for your code files.
 
 </div>
-
-## Preview
-
-![](./images/preview.png)
 
 ## Features
 
