@@ -1,8 +1,9 @@
+
+<div align="center">
+
 # HowLong?
 
 _Ever wondered how long your code really is? Not just in lines, but in centimeters, bananas, or Eiffel Towers?_
-
-<div align="center">
 
 ## ⚠️ Calibration Required!
 
@@ -10,9 +11,11 @@ _Ever wondered how long your code really is? Not just in lines, but in centimete
 
 Use the command `HowLong: Calibrate File Length Measurement (howlong.calibrate)` to set your screen's character size. This ensures the extension gives you correct physical length estimates for your code files.
 
-![](./images/preview.png)
-
 </div>
+
+## Preview
+
+![](./images/preview.png)
 
 ## Features
 
@@ -23,7 +26,7 @@ Use the command `HowLong: Calibrate File Length Measurement (howlong.calibrate)`
 
 ## 🚀 Getting Started
 
-1. **Install the extension** from the [Marketplace](https://marketplace.visualstudio.com/).
+1. **Install the extension** from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=webry.howlong).
 2. **Calibrate:**
 	- Run the command `HowLong: Calibrate File Length Measurement`.
 	- Copy the test text (100 characters), paste into your editor, and measure with a ruler.
