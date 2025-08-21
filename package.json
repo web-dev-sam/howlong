@@ -1,0 +1,76 @@
+{
+  "name": "howlong",
+  "displayName": "How long?",
+  "description": "How long is it? I mean your code...",
+  "publisher": "webry",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/web-dev-sam/howlong"
+  },
+  "author": {
+    "name": "Samuel Braun",
+    "email": "sam@webry.com",
+    "url": "https://webry.com"
+  },
+  "icon": "./images/icon.png",
+  "version": "0.0.3",
+  "engines": {
+    "vscode": "^1.103.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+        "title": "How Long",
+        "properties": {
+            "fileLength.cmPerCharacter": {
+                "type": "number",
+                "default": 0.3065,
+                "description": "Use the command 'howlong.calibrate' (Calibrate File Length Measurement)"
+            }
+        }
+    },
+    "commands": [
+        {
+            "command": "howlong.calibrate",
+            "title": "HowLong: Calibrate File Length Measurement"
+        },
+        {
+            "command": "howlong.cycleFormat",
+            "title": "HowLong: Cycle File Length Format"
+        }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.103.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "eslint": "^9.32.0",
+    "esbuild": "^0.25.8",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.2",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
