@@ -11,6 +11,10 @@ export class FileInfoStatusBar implements vscode.Disposable {
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
+        
+        // Restore the last used format mode
+        this.formatMode = this.context.workspaceState.get<FormatMode>('howlong.statusBarFormatMode', 'fun');
+        
         this.statusBarItem = vscode.window.createStatusBarItem(
             vscode.StatusBarAlignment.Right, 
             300
@@ -55,6 +59,10 @@ export class FileInfoStatusBar implements vscode.Disposable {
                 this.formatMode = 'fun';
                 break;
         }
+        
+        // Save the new format mode
+        this.context.workspaceState.update('howlong.statusBarFormatMode', this.formatMode);
+        
         this.updateStatusBar();
     }
 

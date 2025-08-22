@@ -13,7 +13,7 @@
     "url": "https://webry.com"
   },
   "icon": "./images/icon.png",
-  "version": "0.0.6",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.103.0"
   },
@@ -35,6 +35,16 @@
             }
         }
     },
+    "views": {
+        "explorer": [
+            {
+                "id": "howlong.projectStats",
+                "name": "How Long",
+                "when": "workspaceFolderCount > 0",
+                "icon": "resources/stats-icon.svg"
+            }
+        ]
+    },
     "commands": [
         {
             "command": "howlong.calibrate",
@@ -43,8 +53,56 @@
         {
             "command": "howlong.cycleFormat",
             "title": "HowLong: Cycle File Length Format"
+        },
+        {
+            "command": "howlong.refreshProjectStats",
+            "title": "Refresh",
+            "icon": "$(refresh)"
+        },
+        {
+            "command": "howlong.cycleProjectFormat",
+            "title": "Cycle Format",
+            "icon": "$(symbol-unit)"
+        },
+        {
+            "command": "howlong.toggleProjectView",
+            "title": "Toggle View Mode",
+            "icon": "$(list-tree)"
+        },
+        {
+            "command": "howlong.invalidateCache",
+            "title": "Clear Cache",
+            "icon": "$(clear-all)"
+        },
+        {
+            "command": "howlong.analyzeWorkspace",
+            "title": "HowLong: Analyze Workspace"
         }
-    ]
+    ],
+    "menus": {
+        "view/title": [
+            {
+                "command": "howlong.refreshProjectStats",
+                "when": "view == howlong.projectStats",
+                "group": "navigation@1"
+            },
+            {
+                "command": "howlong.cycleProjectFormat",
+                "when": "view == howlong.projectStats",
+                "group": "navigation@2"
+            },
+            {
+                "command": "howlong.toggleProjectView",
+                "when": "view == howlong.projectStats",
+                "group": "navigation@3"
+            },
+            {
+                "command": "howlong.invalidateCache",
+                "when": "view == howlong.projectStats",
+                "group": "navigation@4"
+            }
+        ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",

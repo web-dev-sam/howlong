@@ -9,7 +9,7 @@ export function formatLengthMetric(lengthInCm: number): string {
     }
 
     if (lengthInCm < 100) {
-        return `${lengthInCm} cm`;
+        return `${formatNumber(lengthInCm)} cm`;
     } else if (lengthInCm < 100000) {
         const meters = lengthInCm / 100;
         return `${formatNumber(meters)} m`;
