@@ -7,8 +7,10 @@ export class FileInfoStatusBar implements vscode.Disposable {
     private statusBarItem: vscode.StatusBarItem;
     private disposables: vscode.Disposable[] = [];
     private formatMode: FormatMode = 'fun'; // Default mode
+    private context: vscode.ExtensionContext;
 
-    constructor() {
+    constructor(context: vscode.ExtensionContext) {
+        this.context = context;
         this.statusBarItem = vscode.window.createStatusBarItem(
             vscode.StatusBarAlignment.Right, 
             300
@@ -84,10 +86,14 @@ export class FileInfoStatusBar implements vscode.Disposable {
                 }
             });
 
-            if (!input) return;
+            if (!input) {
+                return;
+            }
 
             const match = input.trim().match(/^(\d+(\.\d+)?)\s*(cm|in)$/i);
-            if (!match) return;
+            if (!match) {
+                return;
+            }
 
             let length = parseFloat(match[1]);
             const unit = match[3].toLowerCase();
@@ -99,11 +105,8 @@ export class FileInfoStatusBar implements vscode.Disposable {
             // cm per char
             const actualCmPerChar = length / 100;
 
-            await vscode.workspace.getConfiguration().update(
-                'fileLength.cmPerCharacter', 
-                actualCmPerChar, 
-                vscode.ConfigurationTarget.Workspace
-            );
+            // Save to workspace state instead of settings.json
+            await this.context.workspaceState.update('fileLength.cmPerCharacter', actualCmPerChar);
 
             vscode.window.showInformationMessage(`Calibration saved: ${actualCmPerChar.toFixed(4)} cm/char`);
             this.updateStatusBar();
@@ -113,6 +116,11 @@ export class FileInfoStatusBar implements vscode.Disposable {
 
 
     private getCmPerCharacter(): number {
+        const workspaceValue = this.context.workspaceState.get<number>('fileLength.cmPerCharacter');
+        if (workspaceValue !== undefined) {
+            return workspaceValue;
+        }
+        
         return vscode.workspace.getConfiguration().get('fileLength.cmPerCharacter', 17.78 / 58);
     }
 

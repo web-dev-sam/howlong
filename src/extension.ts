@@ -6,7 +6,7 @@ let fileInfoStatusBar: FileInfoStatusBar;
 export function activate(context: vscode.ExtensionContext) {
 	console.log('howlong activated!');
 
-  fileInfoStatusBar = new FileInfoStatusBar();
+  fileInfoStatusBar = new FileInfoStatusBar(context);
   context.subscriptions.push(fileInfoStatusBar);
 }
 
