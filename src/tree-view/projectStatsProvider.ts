@@ -288,9 +288,17 @@ export class ProjectStatsProvider implements vscode.TreeDataProvider<ProjectStat
             }
         }
 
-        // Build hierarchy relationships
+        // Build hierarchy relationships - process deepest folders first
         const rootFolders: FolderStats[] = [];
-        for (const [path, folder] of folderMap) {
+        
+        // Sort folders by depth (deepest first) to ensure children are processed before parents
+        const sortedFolders = Array.from(folderMap.entries()).sort(([pathA], [pathB]) => {
+            const depthA = pathA.split('/').length;
+            const depthB = pathB.split('/').length;
+            return depthB - depthA; // Deeper folders first
+        });
+        
+        for (const [path, folder] of sortedFolders) {
             const pathParts = path.split('/');
             if (pathParts.length === 1) {
                 // Root level folder
@@ -301,7 +309,7 @@ export class ProjectStatsProvider implements vscode.TreeDataProvider<ProjectStat
                 const parent = folderMap.get(parentPath);
                 if (parent) {
                     parent.subfolders.push(folder);
-                    // Propagate stats up to parent
+                    // Propagate stats up to parent (only from direct children)
                     parent.totalFiles += folder.totalFiles;
                     parent.totalCharacters += folder.totalCharacters;
                     parent.totalLengthInCm += folder.totalLengthInCm;

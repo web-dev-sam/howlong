@@ -13,7 +13,7 @@
     "url": "https://webry.com"
   },
   "icon": "./images/icon.png",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "engines": {
     "vscode": "^1.103.0"
   },
