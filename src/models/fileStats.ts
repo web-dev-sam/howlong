@@ -5,6 +5,7 @@ export interface FileStats {
     lengthInCm: number;
     fileSize: number;
     lastModified: number;
+    isTextFile: boolean;
 }
 
 export interface ProjectStats {
@@ -31,6 +32,7 @@ export interface FolderStats {
     totalFiles: number;
     totalCharacters: number;
     totalLengthInCm: number;
+    totalSizeInBytes: number;
     files: FileStats[];
     subfolders: FolderStats[];
 }

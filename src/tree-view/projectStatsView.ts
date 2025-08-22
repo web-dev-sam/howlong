@@ -93,6 +93,9 @@ export class ProjectStatsView implements vscode.Disposable {
                 this.formatMode = 'time';
                 break;
             case 'time':
+                this.formatMode = 'size';
+                break;
+            case 'size':
                 this.formatMode = 'fun';
                 break;
         }
@@ -107,7 +110,8 @@ export class ProjectStatsView implements vscode.Disposable {
             'fun': 'Fun comparisons',
             'metric': 'Metric units',
             'us': 'US units', 
-            'time': 'Time estimates'
+            'time': 'Time estimates',
+            'size': 'File sizes'
         };
         
         vscode.window.showInformationMessage(`Project view format: ${modeNames[this.formatMode]}`);

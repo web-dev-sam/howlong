@@ -107,11 +107,15 @@ export class ProjectStatsProvider implements vscode.TreeDataProvider<ProjectStat
         this.rootItems = [];
 
         // Project total summary
+        const projectDescription = this.formatLength(this.projectStats.totalLengthInCm, undefined, undefined, this.projectStats);
         const projectTotalItem = new ProjectStatsTreeItem(
             'project',
-            `Project Total: ${this.formatLength(this.projectStats.totalLengthInCm)}`,
+            'Project Total',
             this.projectStats.totalLengthInCm,
-            vscode.TreeItemCollapsibleState.None
+            vscode.TreeItemCollapsibleState.None,
+            this.projectStats,  // Pass the project stats as data
+            undefined,
+            projectDescription
         );
         this.rootItems.push(projectTotalItem);
 
@@ -132,30 +136,51 @@ export class ProjectStatsProvider implements vscode.TreeDataProvider<ProjectStat
         
         for (const typeStats of fileTypeStats) {
             // Create file type category item
+            const typeDescription = this.formatLength(typeStats.totalLengthInCm);
             const typeItem = new ProjectStatsTreeItem(
                 'filetype',
-                `${typeStats.extension} (${typeStats.fileCount}) - ${this.formatLength(typeStats.totalLengthInCm)}`,
+                `${typeStats.extension} (${typeStats.fileCount})`,
                 typeStats.totalLengthInCm,
                 vscode.TreeItemCollapsibleState.Collapsed,
-                typeStats
+                typeStats,
+                undefined,
+                typeDescription
             );
 
-            // Create file items for this type (top 10 longest files)
-            const topFiles = typeStats.files.slice(0, 10);
+            // Create file items for this type (top 10 files sorted alphabetically)
+            const sortedFiles = typeStats.files.sort((a, b) => {
+                const nameA = (a.relativePath.split('/').pop() || a.relativePath).toLowerCase();
+                const nameB = (b.relativePath.split('/').pop() || b.relativePath).toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
+            const topFiles = sortedFiles.slice(0, 10);
             const fileItems: ProjectStatsTreeItem[] = topFiles.map(file => {
                 const fileName = file.relativePath.split('/').pop() || file.relativePath;
+                let description: string;
+                
+                if (this.formatMode === 'size') {
+                    description = this.formatFileSize(file.fileSize);
+                } else if (file.isTextFile) {
+                    description = this.formatLength(file.lengthInCm, file);
+                } else {
+                    description = `${this.formatFileSize(file.fileSize)} (binary)`;
+                }
+                
                 return new ProjectStatsTreeItem(
                     'file',
-                    `${fileName} - ${this.formatLength(file.lengthInCm)}`,
+                    fileName,
                     file.lengthInCm,
                     vscode.TreeItemCollapsibleState.None,
-                    file
+                    file,
+                    undefined,
+                    description
                 );
             });
 
             // Add "show more" item if there are more files
-            if (typeStats.files.length > 10) {
-                const remainingCount = typeStats.files.length - 10;
+            if (sortedFiles.length > 10) {
+                const remainingCount = sortedFiles.length - 10;
                 const showMoreItem = new ProjectStatsTreeItem(
                     'filetype',
                     `... and ${remainingCount} more files`,
@@ -182,12 +207,44 @@ export class ProjectStatsProvider implements vscode.TreeDataProvider<ProjectStat
             allFiles.push(...files);
         }
 
-        const folderStructure = this.buildFolderStructure(allFiles);
+        const { rootFiles, folderStructure } = this.buildFolderStructure(allFiles);
+        
+        // Add folder items first (sorted alphabetically)
         const folderItems = this.createFolderTreeItems(folderStructure);
         this.rootItems.push(...folderItems);
+        
+        // Then add root files (sorted alphabetically)
+        const sortedRootFiles = rootFiles.sort((a, b) => {
+            const nameA = (a.relativePath.split('/').pop() || a.relativePath).toLowerCase();
+            const nameB = (b.relativePath.split('/').pop() || b.relativePath).toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+        
+        for (const file of sortedRootFiles) {
+            const fileName = file.relativePath.split('/').pop() || file.relativePath;
+            let description: string;
+            
+            if (this.formatMode === 'size') {
+                description = this.formatFileSize(file.fileSize);
+            } else if (file.isTextFile) {
+                description = this.formatLength(file.lengthInCm, file);
+            } else {
+                description = `${this.formatFileSize(file.fileSize)} (binary)`;
+            }
+            
+            this.rootItems.push(new ProjectStatsTreeItem(
+                'file',
+                fileName,
+                file.lengthInCm,
+                vscode.TreeItemCollapsibleState.None,
+                file,
+                undefined,
+                description
+            ));
+        }
     }
 
-    private buildFolderStructure(files: FileStats[]): FolderStats[] {
+    private buildFolderStructure(files: FileStats[]): { rootFiles: FileStats[], folderStructure: FolderStats[] } {
         const folderMap = new Map<string, FolderStats>();
         const rootFiles: FileStats[] = [];
         
@@ -211,6 +268,7 @@ export class ProjectStatsProvider implements vscode.TreeDataProvider<ProjectStat
                             totalFiles: 0,
                             totalCharacters: 0,
                             totalLengthInCm: 0,
+                            totalSizeInBytes: 0,
                             files: [],
                             subfolders: []
                         });
@@ -225,6 +283,7 @@ export class ProjectStatsProvider implements vscode.TreeDataProvider<ProjectStat
                     folder.totalFiles++;
                     folder.totalCharacters += file.characterCount;
                     folder.totalLengthInCm += file.lengthInCm;
+                    folder.totalSizeInBytes += file.fileSize;
                 }
             }
         }
@@ -246,64 +305,65 @@ export class ProjectStatsProvider implements vscode.TreeDataProvider<ProjectStat
                     parent.totalFiles += folder.totalFiles;
                     parent.totalCharacters += folder.totalCharacters;
                     parent.totalLengthInCm += folder.totalLengthInCm;
+                    parent.totalSizeInBytes += folder.totalSizeInBytes;
                 }
             }
         }
 
-        // Create a special "Root Files" folder if there are any root-level files
-        if (rootFiles.length > 0) {
-            const rootFilesFolder: FolderStats = {
-                path: '',
-                name: 'Root Files',
-                totalFiles: rootFiles.length,
-                totalCharacters: rootFiles.reduce((sum, f) => sum + f.characterCount, 0),
-                totalLengthInCm: rootFiles.reduce((sum, f) => sum + f.lengthInCm, 0),
-                files: rootFiles,
-                subfolders: []
-            };
-            rootFolders.unshift(rootFilesFolder); // Add at the beginning
-        }
-
-        return rootFolders.sort((a, b) => {
-            // Keep "Root Files" at the top, then sort by length
-            if (a.name === 'Root Files') {
-                return -1;
-            }
-            if (b.name === 'Root Files') {
-                return 1;
-            }
-            return b.totalLengthInCm - a.totalLengthInCm;
-        });
+        return {
+            rootFiles,
+            folderStructure: rootFolders.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+        };
     }
 
     private createFolderTreeItems(folders: FolderStats[]): ProjectStatsTreeItem[] {
         return folders.map(folder => {
             const children: ProjectStatsTreeItem[] = [];
             
-            // Add subfolders
+            // Add subfolders (sorted alphabetically)
             if (folder.subfolders.length > 0) {
-                children.push(...this.createFolderTreeItems(folder.subfolders));
+                const sortedSubfolders = folder.subfolders.sort((a, b) => 
+                    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+                );
+                children.push(...this.createFolderTreeItems(sortedSubfolders));
             }
             
-            // Add files (top 10 by length)
-            const topFiles = folder.files
-                .sort((a, b) => b.lengthInCm - a.lengthInCm)
-                .slice(0, 10);
+            // Add files (sorted alphabetically)
+            const sortedFiles = folder.files.sort((a, b) => {
+                const nameA = (a.relativePath.split('/').pop() || a.relativePath).toLowerCase();
+                const nameB = (b.relativePath.split('/').pop() || b.relativePath).toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
+            // Show top 10 files
+            const topFiles = sortedFiles.slice(0, 10);
                 
             for (const file of topFiles) {
                 const fileName = file.relativePath.split('/').pop() || file.relativePath;
+                let description: string;
+                
+                if (this.formatMode === 'size') {
+                    description = this.formatFileSize(file.fileSize);
+                } else if (file.isTextFile) {
+                    description = this.formatLength(file.lengthInCm, file);
+                } else {
+                    description = `${this.formatFileSize(file.fileSize)} (binary)`;
+                }
+                
                 children.push(new ProjectStatsTreeItem(
                     'file',
-                    `${fileName} - ${this.formatLength(file.lengthInCm)}`,
+                    fileName,
                     file.lengthInCm,
                     vscode.TreeItemCollapsibleState.None,
-                    file
+                    file,
+                    undefined,
+                    description
                 ));
             }
 
             // Add "show more" if there are more files
-            if (folder.files.length > 10) {
-                const remainingCount = folder.files.length - 10;
+            if (sortedFiles.length > 10) {
+                const remainingCount = sortedFiles.length - 10;
                 children.push(new ProjectStatsTreeItem(
                     'folder',
                     `... and ${remainingCount} more files`,
@@ -312,14 +372,17 @@ export class ProjectStatsProvider implements vscode.TreeDataProvider<ProjectStat
                 ));
             }
 
+            const folderDescription = this.formatLength(folder.totalLengthInCm, undefined, folder);
             const folderItem = new ProjectStatsTreeItem(
                 'folder',
-                `${folder.name} - ${this.formatLength(folder.totalLengthInCm)}`,
+                folder.name,
                 folder.totalLengthInCm,
                 folder.subfolders.length > 0 || folder.files.length > 0 ? 
                     vscode.TreeItemCollapsibleState.Collapsed : 
                     vscode.TreeItemCollapsibleState.None,
-                folder  // Pass the folder data for resource URI
+                folder,  // Pass the folder data for resource URI
+                undefined,
+                folderDescription
             );
 
             (folderItem as any).children = children;
@@ -345,7 +408,27 @@ export class ProjectStatsProvider implements vscode.TreeDataProvider<ProjectStat
         return updatedItem;
     }
 
-    private formatLength(cm: number): string {
-        return ProjectStatsTreeItem.formatLength(cm, this.formatMode);
+    private formatLength(cm: number, fileStats?: FileStats, folderStats?: FolderStats, projectStats?: ProjectStats): string {
+        if (this.formatMode === 'size') {
+            if (fileStats) {
+                return this.formatFileSize(fileStats.fileSize);
+            } else if (folderStats) {
+                return this.formatFileSize(folderStats.totalSizeInBytes);
+            } else if (projectStats) {
+                return this.formatFileSize(projectStats.totalSizeInBytes);
+            }
+            return 'N/A';
+        }
+        return ProjectStatsTreeItem.formatLength(cm, this.formatMode, fileStats);
+    }
+
+    private formatFileSize(bytes: number): string {
+        if (bytes === 0) {
+            return '0 B';
+        }
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 }

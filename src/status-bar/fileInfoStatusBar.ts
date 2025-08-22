@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { formatLengthFun, formatLengthMetric, formatLengthUS, formatLengthTime } from '../utils/utils';
 
-type FormatMode = 'fun' | 'metric' | 'us' | 'time';
+type FormatMode = 'fun' | 'metric' | 'us' | 'time' | 'size';
 
 export class FileInfoStatusBar implements vscode.Disposable {
     private statusBarItem: vscode.StatusBarItem;
@@ -56,6 +56,9 @@ export class FileInfoStatusBar implements vscode.Disposable {
                 this.formatMode = 'time';
                 break;
             case 'time':
+                this.formatMode = 'size';
+                break;
+            case 'size':
                 this.formatMode = 'fun';
                 break;
         }
@@ -124,12 +127,36 @@ export class FileInfoStatusBar implements vscode.Disposable {
 
 
     private getCmPerCharacter(): number {
+        // First try workspace state, then fall back to configuration, then default
         const workspaceValue = this.context.workspaceState.get<number>('fileLength.cmPerCharacter');
         if (workspaceValue !== undefined) {
             return workspaceValue;
         }
         
         return vscode.workspace.getConfiguration().get('fileLength.cmPerCharacter', 17.78 / 58);
+    }
+
+    private getFileSize(uri: vscode.Uri): number {
+        try {
+            // For in-memory documents, calculate size from content
+            const document = vscode.workspace.textDocuments.find(doc => doc.uri.toString() === uri.toString());
+            if (document) {
+                return Buffer.byteLength(document.getText(), 'utf8');
+            }
+            return 0;
+        } catch {
+            return 0;
+        }
+    }
+
+    private formatFileSize(bytes: number): string {
+        if (bytes === 0) {
+            return '0 B';
+        }
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 
     private registerEventListeners(): void {
@@ -168,6 +195,12 @@ export class FileInfoStatusBar implements vscode.Disposable {
                 break;
             case 'time':
                 formattedText = formatLengthTime(cm);
+                break;
+            case 'size':
+                // Get file size from the document URI
+                const uri = activeEditor.document.uri;
+                const fileSize = this.getFileSize(uri);
+                formattedText = this.formatFileSize(fileSize);
                 break;
         }
 

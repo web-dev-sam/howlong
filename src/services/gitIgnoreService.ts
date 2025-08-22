@@ -100,23 +100,10 @@ export class GitIgnoreService {
 
     /**
      * Check if a file should be included for analysis
+     * Now we include all files, but we'll handle text vs binary in the analysis
      */
-    shouldIncludeFile(filePath: string): boolean {
-        // Basic checks for text files
-        const textExtensions = [
-            '.ts', '.js', '.tsx', '.jsx', '.vue', '.svelte',
-            '.py', '.rb', '.php', '.java', '.c', '.cpp', '.h', '.hpp',
-            '.cs', '.go', '.rs', '.kt', '.swift', '.dart',
-            '.html', '.css', '.scss', '.sass', '.less',
-            '.json', '.xml', '.yaml', '.yml', '.toml',
-            '.md', '.txt', '.csv', '.sql',
-            '.sh', '.bat', '.ps1'
-        ];
-
-        const hasTextExtension = textExtensions.some(ext => 
-            filePath.toLowerCase().endsWith(ext)
-        );
-
-        return hasTextExtension;
+    shouldIncludeFile(_filePath: string): boolean {
+        // Include all files - we'll detect text vs binary during analysis
+        return true;
     }
 }

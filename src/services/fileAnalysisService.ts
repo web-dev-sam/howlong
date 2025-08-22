@@ -78,12 +78,14 @@ export class FileAnalysisService {
             
             const allFiles = await vscode.workspace.findFiles('**/*', excludePatterns);
             console.log(`Found ${allFiles.length} files after exclusions`);
+            console.log('First 10 files found:', allFiles.slice(0, 10).map(f => f.fsPath));
 
             // Filter to only text files
             const textFiles = allFiles.filter(file => 
                 this.gitIgnoreService.shouldIncludeFile(file.fsPath)
             );
             console.log(`${textFiles.length} files are text files`);
+            console.log('First 10 text files:', textFiles.slice(0, 10).map(f => f.fsPath));
 
             // Get only files that have been modified since last analysis
             const filesToAnalyze = await this.cacheService.getModifiedFiles(textFiles);
@@ -138,21 +140,38 @@ export class FileAnalysisService {
     private async analyzeFile(fileUri: vscode.Uri, cmPerChar: number): Promise<FileStats | null> {
         try {
             const stat = await vscode.workspace.fs.stat(fileUri);
-            const content = await vscode.workspace.fs.readFile(fileUri);
-            const text = new TextDecoder().decode(content);
             
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             const relativePath = workspaceFolder 
                 ? vscode.workspace.asRelativePath(fileUri)
                 : fileUri.fsPath;
 
+            // Try to read the file to detect if it's text or binary
+            let characterCount = 0;
+            let isTextFile = false;
+            
+            try {
+                const content = await vscode.workspace.fs.readFile(fileUri);
+                const text = new TextDecoder('utf-8', { fatal: true }).decode(content);
+                
+                // If we get here without throwing, it's a valid text file
+                characterCount = text.length;
+                isTextFile = true;
+            } catch {
+                // File is binary or not valid UTF-8
+                // We'll still include it but with 0 character count
+                characterCount = 0;
+                isTextFile = false;
+            }
+
             const fileStats: FileStats = {
                 path: fileUri.fsPath,
                 relativePath,
-                characterCount: text.length,
-                lengthInCm: text.length * cmPerChar,
+                characterCount,
+                lengthInCm: isTextFile ? characterCount * cmPerChar : 0,
                 fileSize: stat.size,
-                lastModified: stat.mtime
+                lastModified: stat.mtime,
+                isTextFile // Add this to track text vs binary
             };
 
             // Cache individual file stats
