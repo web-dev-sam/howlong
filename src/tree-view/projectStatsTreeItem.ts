@@ -63,7 +63,11 @@ export class ProjectStatsTreeItem extends vscode.TreeItem {
                 return `Total project length: ${this.formatLength(this.lengthInCm, 'metric')}\nTotal project size: ${projectStats ? this.formatFileSize(projectStats.totalSizeInBytes) : 'Unknown'}`;
             case 'filetype':
                 const typeStats = this.data as FileTypeStats;
-                return `${typeStats.extension} files: ${typeStats.fileCount} files, total length: ${this.formatLength(this.lengthInCm, 'metric')}`;
+                if (typeStats && typeof typeStats.extension === 'string') {
+                    return `${typeStats.extension} files: ${typeStats.fileCount} files, total length: ${this.formatLength(this.lengthInCm, 'metric')}`;
+                } else {
+                    return typeof this.label === 'string' ? this.label : 'Unknown filetype';
+                }
             case 'folder':
                 const folderStats = this.data as FolderStats;
                 return `Folder: ${folderStats?.name || 'Unknown'}\n${folderStats?.totalFiles || 0} files\nTotal length: ${this.formatLength(this.lengthInCm, 'metric')}\nTotal size: ${folderStats ? this.formatFileSize(folderStats.totalSizeInBytes) : 'Unknown'}`;
@@ -109,8 +113,14 @@ export class ProjectStatsTreeItem extends vscode.TreeItem {
                 break;
             case 'filetype':
                 const typeStats = this.data as FileTypeStats;
-                newLabel = `${typeStats.extension} (${typeStats.fileCount})`;
-                newDescription = this.formatLength(this.lengthInCm, formatMode);
+                if (typeStats && typeof typeStats.extension === 'string') {
+                    newLabel = `${typeStats.extension} (${typeStats.fileCount})`;
+                    newDescription = this.formatLength(this.lengthInCm, formatMode);
+                } else {
+                    // Handle "show more" items or other filetype items without proper data
+                    newLabel = typeof this.label === 'string' ? this.label : 'Unknown filetype';
+                    newDescription = undefined;
+                }
                 break;
             case 'folder':
                 const folderName = typeof this.label === 'string' ? 
